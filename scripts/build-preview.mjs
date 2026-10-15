@@ -13,6 +13,7 @@ const alias = {
 };
 // utilities.css is the checked-in Tailwind 3 snapshot matching Hayase's utility
 // semantics. Do not regenerate it with Tailwind 4: the upstream layout is v3.
+const componentStyles = new Map();
 const result = await build({
   entryPoints: [`${base}/entry.js`], outfile: 'plugin/native-preview.js', bundle: true, format: 'iife', globalName: 'HayaseNativePreview', minify: true,
   conditions: ['svelte', 'browser'], mainFields: ['svelte', 'browser', 'module', 'main'], loader: { '.css': 'text' }, metafile: true,
@@ -29,11 +30,16 @@ const result = await build({
       if (args.path === 'lucide-svelte/dist/Icon.svelte') return { path: resolve('node_modules/lucide-svelte/dist/Icon.svelte') };
     });
     builder.onLoad({ filter: /\.svelte$/ }, args => {
-      const { js } = compile(readFileSync(args.path, 'utf8'), { filename: args.path, generate: 'client', css: 'injected', dev: false });
+      const { js, css } = compile(readFileSync(args.path, 'utf8'), { filename: args.path, generate: 'client', css: 'external', dev: false });
+      if (css?.code) componentStyles.set(args.path, css.code);
       return { contents: js.code, resolveDir: dirname(args.path), loader: 'js' };
     });
   } }]
 });
+// Install component CSS explicitly in the preview shadow root. Runtime style
+// injection can resolve the wrong root in Electron's extension isolated world.
+const bundle = readFileSync('plugin/native-preview.js', 'utf8');
+writeFileSync('plugin/native-preview.js', `globalThis.__hayasePreviewComponentCSS=${JSON.stringify([...componentStyles.values()].join('\n'))};\n${bundle}`);
 const licenses = new Map();
 for (const input of Object.keys(result.metafile.inputs).filter(path => path.startsWith('node_modules/'))) {
   let directory = dirname(resolve(input));

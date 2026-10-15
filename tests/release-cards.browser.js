@@ -32,10 +32,21 @@ window.runReleaseCardTests = async () => {
   assert(Math.abs(parseFloat(getComputedStyle(buttons[1]).height) - 25.6) < .1, 'Native icon buttons retain their 1.6rem size');
   assert(native.querySelector('.details').textContent.includes('24 Minutes') && native.querySelector('.details').textContent.includes('87%'), 'Native details use duration, season and score without extra genres');
   assert(getComputedStyle(native.querySelector('.line-clamp-4')).webkitLineClamp === '4', 'Synopsis retains the native four-line clamp');
+  const middle = root.querySelectorAll('article a')[1];
+  root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  middle.dispatchEvent(new PointerEvent('pointerenter'));
+  await wait(400);
+  const centered = preview.firstElementChild.shadowRoot.querySelector('.absolute-container');
+  const actual = centered.getBoundingClientRect(), anchor = middle.getBoundingClientRect();
+  assert(Math.abs((actual.left + actual.width / 2) - (anchor.left + anchor.width / 2)) < 1, 'Hover preview is centered over its poster after animation');
+  root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  card.dispatchEvent(new PointerEvent('pointerenter'));
+  await wait(400);
+  const currentButtons = [...preview.firstElementChild.shadowRoot.querySelectorAll('button')];
   const previousAction = globalThis.hayaseNativeAction;
   const invoked = [];
   globalThis.hayaseNativeAction = (release, action) => invoked.push(action);
-  try { buttons.forEach(button => button.click()); } finally { globalThis.hayaseNativeAction = previousAction; }
+  try { currentButtons.forEach(button => button.click()); } finally { globalThis.hayaseNativeAction = previousAction; }
   assert(invoked.join(',') === 'play,favorite,bookmark', 'All three native actions have functioning adapters');
   root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   assert(preview.hidden, 'Escape dismisses the preview');
