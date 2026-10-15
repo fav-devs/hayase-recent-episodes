@@ -23,14 +23,16 @@
     } catch { return {}; }
   }
 
-  globalThis.hayaseHistoryFor = async releases => {
+  globalThis.hayaseCardContextFor = async releases => {
     const ids = [...new Set(releases.map(release => release.mediaId))];
     const history = {};
+    const states = {};
     const watched = read('watchProgress') || {};
     for (const id of ids) if (watched[id]?.episode > 0 && watched[id]?.currentTime > 0) history[id] = true;
     const list = await localList();
     for (const id of ids) {
       const entry = list[id]?.mediaListEntry;
+      states[id] = { status: entry?.status ?? null, favorite: !!list[id]?.isFavourite };
       if (entry?.progress > 0 || entry?.status === 'COMPLETED') history[id] = true;
     }
     // Only the public viewer ID is used. The linked account's token is never
@@ -40,10 +42,14 @@
       try {
         const response = await chrome.runtime.sendMessage({ type: 'history-progress', userId, ids });
         if (response?.ok) for (const entry of response.entries) {
+          if (ids.includes(entry.mediaId)) states[entry.mediaId] = { ...states[entry.mediaId], status: entry.status ?? null };
           if (ids.includes(entry.mediaId) && (entry.progress > 0 || entry.status === 'COMPLETED')) history[entry.mediaId] = true;
         }
+        if (Array.isArray(response?.favorites)) for (const id of ids) states[id] = { ...states[id], favorite: response.favorites.includes(id) };
       } catch { /* Local playback/list history remains available offline or for private lists. */ }
     }
-    return history;
+    const settings = read('settings') || {};
+    return { history, states, settings: { hideSpoilers: !!settings.hideSpoilers, titleType: settings.titleType } };
   };
+  globalThis.hayaseHistoryFor = async releases => (await globalThis.hayaseCardContextFor(releases)).history;
 })();

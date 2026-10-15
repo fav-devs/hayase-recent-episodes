@@ -38,3 +38,14 @@ test('local history remains usable when the public list cannot be read', async (
   const result = await context.hayaseHistoryFor([{ mediaId: 21 }]);
   assert.equal(result[21], true);
 });
+
+test('preview context includes linked list status, favorites and spoiler preferences', async () => {
+  const { context } = fixture({ ALViewer: { viewer: { id: 123 } }, settings: { hideSpoilers: true, titleType: 'ROMAJI' } }, {
+    ok: true, entries: [{ mediaId: 21, progress: 2, status: 'CURRENT' }], favorites: [21]
+  });
+  const result = await context.hayaseCardContextFor([{ mediaId: 21 }]);
+  assert.equal(result.states[21].favorite, true);
+  assert.equal(result.states[21].status, 'CURRENT');
+  assert.equal(result.settings.hideSpoilers, true);
+  assert.equal(result.settings.titleType, 'ROMAJI');
+});

@@ -1,5 +1,5 @@
 import { apiWindow, selectReleases } from './releases.mjs';
-import { airingRows, enrichRows, graphql, historyProgress } from './anilist.mjs';
+import { airingRows, enrichRows, graphql, historyProgress, favoriteIds } from './anilist.mjs';
 
 const pending = new Map();
 const TTL = 10 * 60 * 1000;
@@ -53,7 +53,10 @@ chrome.runtime.onMessage.addListener((request, sender, respond) => {
   if (!['recent-episodes', 'latest-episode', 'history-progress'].includes(request?.type)) return;
   if (!sender.url?.startsWith('https://hayase.app/') || sender.id !== chrome.runtime.id) return;
   if (request.type === 'history-progress') {
-    historyProgress(request.userId, request.ids).then(entries => respond({ ok: true, entries }), () => respond({ ok: false }));
+    historyProgress(request.userId, request.ids).then(async entries => {
+      const favorites = await favoriteIds(request.userId).catch(() => null);
+      respond({ ok: true, entries, favorites });
+    }, () => respond({ ok: false }));
     return true;
   }
   if (request.type === 'latest-episode') {

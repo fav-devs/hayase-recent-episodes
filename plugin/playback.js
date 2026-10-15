@@ -24,7 +24,8 @@
     root.append(status); document.body.append(host); setTimeout(() => host.remove(), 12000);
   }
 
-  globalThis.hayasePlayLatest = async release => {
+  globalThis.hayaseNativeAction = async (release, action = 'play') => {
+    if (!['play', 'favorite', 'bookmark'].includes(action)) return;
     pending?.abort();
     const controller = pending = new AbortController();
     const signal = controller.signal;
@@ -38,7 +39,7 @@
     addEventListener('hashchange', cancelOnNavigation);
     addEventListener('keydown', cancelOnEscape, true);
     try {
-      const latest = await chrome.runtime.sendMessage({ type: 'latest-episode', mediaId: release.mediaId });
+      const latest = action === 'play' ? await chrome.runtime.sendMessage({ type: 'latest-episode', mediaId: release.mediaId }) : { ok: true };
       if (signal.aborted) return;
       if (!latest?.ok) throw new Error(latest?.error || 'Could not find the latest episode.');
       const episode = latest.episode ?? release.episode;
@@ -50,6 +51,16 @@
         if (!titles.has(normalize(document.querySelector('h1')?.textContent))) return;
         return [...document.querySelectorAll('button')].find(button => visible(button) && !button.closest('[role="dialog"]') && /^(Watch Now|Play Now|Continue|Rewatch)$/i.test(button.textContent.trim()));
       }, signal);
+      if (action !== 'play') {
+        const path = action === 'favorite'
+          ? 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'
+          : 'm19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z';
+        const scope = play.parentElement?.parentElement;
+        const button = [...scope?.querySelectorAll('button') ?? []].find(node => [...node.querySelectorAll('svg path')].some(shape => shape.getAttribute('d') === path));
+        if (!button || button.disabled) throw new Error(`Hayase's ${action} control is unavailable.`);
+        button.click();
+        return;
+      }
       play.click();
       const dialog = await waitFor(() => [...document.querySelectorAll('[role="dialog"]')].find(node =>
         visible(node) && node.querySelector('input[type="number"]') && [...node.querySelectorAll('button')].some(button => button.textContent.trim() === 'Auto Select Torrent') &&
@@ -73,4 +84,5 @@
       if (pending === controller) pending = null;
     }
   };
+  globalThis.hayasePlayLatest = release => globalThis.hayaseNativeAction(release, 'play');
 })();

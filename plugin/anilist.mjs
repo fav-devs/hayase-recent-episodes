@@ -1,5 +1,5 @@
 const FIELDS = `id title { english romaji native } coverImage { large extraLarge color } bannerImage
-  description(asHtml: false) format season seasonYear startDate { year } averageScore genres duration episodes isAdult`;
+  description(asHtml: false) format season seasonYear startDate { year month } averageScore genres duration episodes isAdult trailer { id site }`;
 
 export async function graphql(query, variables) {
   const response = await fetch('https://graphql.anilist.co', {
@@ -57,4 +57,18 @@ export async function historyProgress(userId, ids) {
     entries.push(...data.Page.mediaList.filter(Boolean));
   }
   return entries;
+}
+
+export async function favoriteIds(userId) {
+  const ids = [];
+  for (let page = 1; page <= 40; page++) {
+    const data = await graphql(`query PreviewFavorites($id:Int,$page:Int) {
+      User(id:$id) { favourites { anime(page:$page,perPage:50) { nodes { id } pageInfo { hasNextPage } } } }
+    }`, { id: userId, page });
+    const result = data.User?.favourites?.anime;
+    if (!Array.isArray(result?.nodes)) throw new Error('Favorites unavailable.');
+    ids.push(...result.nodes.filter(Boolean).map(media => media.id));
+    if (!result.pageInfo?.hasNextPage) return ids;
+  }
+  throw new Error('Favorites list is too large.');
 }

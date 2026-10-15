@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Hayase playback handoff fixture</title>
-<main><h1>One Piece</h1><button id="watch">Watch Now</button></main>
+<main><h1>One Piece</h1><div><div><button id="watch">Watch Now</button></div><button id="favorite" aria-label="Favorite"><svg><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button><button id="bookmark" aria-label="Bookmark"><svg><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg></button></div></main>
 <script>
 window.chrome = { runtime: { sendMessage: async request => {
   window.latestRequest = request;
@@ -14,6 +14,8 @@ document.getElementById('watch').onclick = () => {
   dialog.querySelector('button').onclick = () => { window.startedEpisode = window.queriedEpisode; dialog.remove(); };
   document.body.append(dialog);
 };
+document.getElementById('favorite').onclick = () => { window.favoriteToggled = true; };
+document.getElementById('bookmark').onclick = () => { window.bookmarkToggled = true; };
 window.runPlaybackTests = async () => {
   const results = [];
   const assert = (condition, message) => { if (!condition) throw new Error(message); results.push(message); };
@@ -24,6 +26,10 @@ window.runPlaybackTests = async () => {
   assert(location.hash === '#/app/anime/21', 'Playback opens the matching native anime route');
   assert(window.queriedEpisode === 1121, 'Native source input uses the latest episode rather than watched progress or an older card');
   assert(window.startedEpisode === 1121, 'Native Auto Select Torrent is invoked after changing the episode');
+  await hayaseNativeAction({ mediaId: 21, episode: 1100, title: 'One Piece' }, 'favorite');
+  assert(window.favoriteToggled, 'Favorite action invokes the native control');
+  await hayaseNativeAction({ mediaId: 21, episode: 1100, title: 'One Piece' }, 'bookmark');
+  assert(window.bookmarkToggled, 'Bookmark action invokes the native control');
   delete window.startedEpisode; window.delayLatest = true;
   const playback = hayasePlayLatest({ mediaId: 21, episode: 1100, title: 'One Piece' });
   location.hash = '#/app/schedule';
