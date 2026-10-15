@@ -1,0 +1,21 @@
+{
+  "repository": "https://github.com/hayase-app/interface",
+  "commit": "7e6e2675d5afa3afb1e17023bb67ed3a58faf785",
+  "unchangedFiles": {
+    "button/bookmark.svelte": "34b2a9c80ee6c0c29d4120b0aa025844b479a5cef2a38f4a683f19357d84f470",
+    "button/button.svelte": "ec36eacaf39a42d49310e2551f72aada1a707ef68acbf1bcdff60dfc906b5eeb",
+    "button/favorite.svelte": "3388eac334df91511bdf493162ebe36514dd6e182e9521e38a95f7597b943a98",
+    "button/index.ts": "fdc0cce5f5852505c84c873907d18a78baeea561f7a3e9ad52eeed65ec2464ef",
+    "cards/YoutubeIframe.svelte": "4eebf9528a689fda19a08cbf2877304e8c66a01acc54aa3e63945b7f255324eb",
+    "cards/preview.svelte": "dfaac66e93e801d4120960bae4c4dbfc7303591783bd0ca0c95892b790d677c3",
+    "icons/Volume2.svelte": "f84d2b5b873a6aaf7d899105e5a54eda25f45caeabeb4f08f902964250ee468b",
+    "icons/bookmark.svelte": "e0c860ba3695dbb181ad6efba26a9ebcb10490231dc8f85b3eda4abc9768ef53",
+    "icons/heart.svelte": "70302a61b835f13f7fa8a25325fcde583102409dfa73b7e940b4e328f31d9678",
+    "img/banner.svelte": "c9fc8497e37c0d146277b207d84ff8e4e97e3adab0b6caef19bb229ee6631eba",
+    "img/index.ts": "d0374c2e3fab50d53a4b458f4c7c6445882962251e1bd558f57ce5d4d6f6e3da",
+    "img/load.svelte": "42be1cabd42d9b8ffda6714406e489e1a93328300f402fa8e0d5afb6c9ed1b37"
+  },
+  "modifiedFiles": {
+    "button/play.svelte": "Only the conditional Watch Now/Continue/Rewatch text is replaced with Play now."
+  }
+}

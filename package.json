@@ -1,6 +1,6 @@
 {
   "name": "hayase-recent-episodes",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A desktop Hayase plugin for recent anime episodes and customizable Home sections.",
   "private": true,
   "license": "UNLICENSED",
@@ -18,7 +18,18 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "node scripts/build-preview.mjs",
     "test": "node --test tests/*.test.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "npm run build && node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "bits-ui": "^0.22.0",
+    "clsx": "^2.1.1",
+    "esbuild": "^0.28.2",
+    "lucide-svelte": "^1.0.1",
+    "svelte": "^5.57.2",
+    "tailwind-merge": "^2.6.1",
+    "tailwind-variants": "^0.2.1",
+    "tailwindcss": "^4.3.3"
   }
 }

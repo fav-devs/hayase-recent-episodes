@@ -3,3 +3,5 @@ node_modules/
 .env
 .env.*
 !.env.example
+plugin/native-preview.js
+plugin/OSS-LICENSES.txt

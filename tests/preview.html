@@ -2,6 +2,7 @@
 <html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hayase plugin integration fixture</title>
 <style>
  :root{--background:hsl(240 6% 8%);--foreground:hsl(240 5% 94%);--muted-foreground:hsl(240 4% 65%);--border:hsl(240 4% 24%);--card:hsl(240 5% 11%);--accent:hsl(240 4% 18%);--muted:hsl(240 4% 18%);--ring:hsl(210 80% 65%)}
+ :root{--primary:hsl(240 5% 94%);--primary-foreground:hsl(240 6% 8%);--secondary:hsl(240 4% 18%);--secondary-foreground:hsl(240 5% 94%);--accent-foreground:hsl(240 5% 94%);--input:hsl(240 4% 24%)}
  body{margin:0;background:var(--background);color:var(--foreground);font:14px system-ui}main{max-width:1200px;margin:40px auto}.fixture{padding:16px;color:var(--muted-foreground)}.cursor-pointer{padding:16px}.overflow-x-scroll{height:80px;padding:16px}
 </style>
 <main><p class="fixture">Integration fixture with sample data. This is not the live Hayase app.</p><div class="cursor-pointer text-muted-foreground"><div class="font-semibold text-lg">Continue Watching</div></div><div class="overflow-x-scroll">Existing Home row</div></main>
@@ -12,6 +13,7 @@
    get: async key => ({ [key]: JSON.parse(localStorage.getItem(key) || 'null') }),
    set: async values => { for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value)); }
  } }, runtime: { sendMessage: async request => {
+   if (request.type === 'preview-images') return { images: null };
    if (request.type === 'latest-episode') return { ok: true, episode: 1121 };
    await new Promise(resolve => setTimeout(resolve, 80));
    if (window.fixtureError) return { ok: false, error: 'Could not reach the release feed. Check your connection and retry.' };
@@ -21,4 +23,4 @@
      { mediaId: 100, episode: 1, title: '<img src=x onerror=alert(1)>', airType: request.airType, time: Date.now() - 9000000, href: '/#/app/anime/100' }
    ] };
  } } };
-</script><script src="../plugin/home-layout.js"></script><script src="../plugin/playback.js"></script><script src="../plugin/history.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>
+</script><script src="../plugin/home-layout.js"></script><script src="../plugin/playback.js"></script><script src="../plugin/history.js"></script><script src="../plugin/native-preview.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script><script src="native-preview.browser.js"></script></html>

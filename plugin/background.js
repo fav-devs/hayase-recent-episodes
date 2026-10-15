@@ -2,6 +2,7 @@ import { apiWindow, selectReleases } from './releases.mjs';
 import { airingRows, enrichRows, graphql, historyProgress, favoriteIds } from './anilist.mjs';
 
 const pending = new Map();
+const previewImages = new Map();
 const TTL = 10 * 60 * 1000;
 
 export async function loadReleases(request) {
@@ -50,8 +51,18 @@ export async function loadReleases(request) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, respond) => {
-  if (!['recent-episodes', 'latest-episode', 'history-progress'].includes(request?.type)) return;
+  if (!['recent-episodes', 'latest-episode', 'history-progress', 'preview-images'].includes(request?.type)) return;
   if (!sender.url?.startsWith('https://hayase.app/') || sender.id !== chrome.runtime.id) return;
+  if (request.type === 'preview-images') {
+    const id = request.mediaId;
+    if (!Number.isInteger(id) || id < 1) { respond({ images: null }); return; }
+    if (!previewImages.has(id)) {
+      if (previewImages.size >= 100) previewImages.delete(previewImages.keys().next().value);
+      previewImages.set(id, fetch(`https://hayase.ani.zip/v2/images/tmdb?anilist_id=${id}`, { credentials: 'omit', signal: AbortSignal.timeout(10000) }).then(async response => response.ok ? response.json() : null).catch(() => null));
+    }
+    previewImages.get(id).then(images => respond({ images }));
+    return true;
+  }
   if (request.type === 'history-progress') {
     historyProgress(request.userId, request.ids).then(async entries => {
       const favorites = await favoriteIds(request.userId).catch(() => null);

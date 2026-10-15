@@ -10,7 +10,7 @@ A desktop Hayase plugin for recently aired anime and a customizable Home screen.
 - Save your layout locally between app sessions.
 - Show a small history icon and released-episode number on cards for anime you have watched.
 
-**Experimental, version 0.6.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
+**Experimental, version 0.7.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
 
 ## Install
 
@@ -22,16 +22,17 @@ The plugin targets `https://hayase.app/*`, matching the current desktop wrapper.
 
 ## Build and test
 
-Requires Node.js 20+ and Python 3. No runtime dependencies or compilation step.
+Requires Node.js 20+ and Python 3. Build dependencies are installed with npm; the resulting extension bundles its runtime and needs no separate installation.
 
 ```sh
 git clone https://github.com/fav-devs/hayase-recent-episodes.git
 cd hayase-recent-episodes
+npm ci
 npm test
 npm run package
 ```
 
-The generated ZIP contains the files in `plugin/`, with `manifest.json` at its root. Packaging checks that the version in `package.json` matches `plugin/manifest.json`.
+The build compiles the native Svelte preview into `plugin/native-preview.js`. The generated ZIP contains the plugin files and third-party license notices, with `manifest.json` at its root. Run the build before using an unpacked manifest from a source checkout. Packaging checks that the version in `package.json` matches `plugin/manifest.json`.
 
 To preview the UI with sample data:
 
@@ -55,9 +56,19 @@ Clicking a poster opens the anime page. **Play now** in the hover preview looks 
 
 The plugin uses local extension storage for layout preferences and a ten-minute response cache. Cached periods remain readable when the feed is unavailable. The panel refreshes automatically every ten minutes.
 
-API host permissions cover `graphql.anilist.co` and `tsuzuki.top`. The content script runs only on Hayase. Account credentials and watch history are not sent to either service. Titles and descriptions are rendered as text; images require HTTPS URLs.
+API host permissions cover `graphql.anilist.co`, `tsuzuki.top`, and `hayase.ani.zip` (the same banner-image service used by native Hayase cards). The content script runs only on Hayase. Account credentials and watch history are not sent to either service. Titles and descriptions are rendered as text; images require HTTPS URLs.
 
-Hayase does not expose its internal AniList client or compiled card components through a public plugin bridge. This plugin uses the public AniList API independently. For history badges, it reads local playback progress, the local watchlist, and the public viewer ID from the connected AniList account, then fetches public list progress for the displayed anime. The token is never forwarded, stored, logged, or used for requests. Private/unavailable AniList lists fall back to local history. Planning entries with no viewing progress do not get badges. The badge number is the episode shown on the card, not your watched-progress number.
+Hayase does not expose its internal client through a public plugin bridge. This plugin uses the public AniList API independently, but now compiles Hayase's actual Svelte hover preview and its buttons, images and trailer components. See [native preview provenance](src/native-preview/UPSTREAM.md) for the pinned source and explicit adapters. For history badges, it reads local playback progress, the local watchlist, and the public viewer ID from the connected AniList account, then fetches public list progress for the displayed anime. The token is never forwarded, stored, logged, or used for requests. Private/unavailable AniList lists fall back to local history. Planning entries with no viewing progress do not get badges. The badge number is the episode shown on the card, not your watched-progress number.
+
+## Native hover preview
+
+The hover card reuses the pinned upstream Svelte markup and CSS: 280 × 320 dimensions, 45% banner/trailer area, title, native Play/Favorite/Bookmark controls, one details line and a four-line synopsis. Native image loading, trailer autoplay/mute behavior and animations are bundled as well. The Play label is changed to **Play now** as requested.
+
+Favorite and Bookmark clicks open the anime page and invoke Hayase's native controls. They do not write account data through a copied token. Local/public state supplies icon fills, progress text, title preferences and spoiler hiding; unavailable private state remains a limitation. The preview uses a fixed portal so it can escape the scrolling row, with viewport-edge clamping.
+
+The public app returned a 401 in the development browser. The compiled source and layout have been checked locally, but a side-by-side check in the installed app is still needed before claiming full live-app parity.
+
+Validation: 15 Node tests and 52 browser assertions passed across layout, card geometry, trailer/state behavior and native action handoff. A real keyboard-focus assertion was skipped because the collaborative preview tab was unfocused.
 
 ## Compatibility
 
@@ -73,4 +84,4 @@ The layout modal moves existing heading/row pairs without replacing their event 
 - [Upstream research notes](docs/recent-releases-research.md)
 - [Report an issue](https://github.com/fav-devs/hayase-recent-episodes/issues)
 
-No distribution license has been selected; package metadata is currently marked `UNLICENSED`. This package is private for npm publishing purposes; install the generated ZIP through Hayase.
+Original project code has no distribution license selected (`UNLICENSED`). Vendored Hayase components are covered separately by their included BUSL-1.1 license; other bundled dependencies retain their own notices. This package is private for npm publishing purposes; install the generated ZIP through Hayase.

@@ -2,6 +2,7 @@ window.runReleaseCardTests = async () => {
   const root = document.querySelector('#hayase-recent-episodes').shadowRoot;
   const settings = document.querySelector('#hayase-home-layout').shadowRoot;
   const results = [];
+  const skipped = [];
   const assert = (condition, message) => { if (!condition) throw new Error(message); results.push(message); };
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const card = root.querySelector('article a');
@@ -18,17 +19,31 @@ window.runReleaseCardTests = async () => {
   assert(root.querySelector('article .history-badge')?.textContent === '1120', 'History badge shows the released episode number for a watched anime');
   assert(!root.querySelectorAll('article')[1].querySelector('.history-badge'), 'Unwatched anime has no history badge');
   card.dispatchEvent(new PointerEvent('pointerenter'));
+  await wait(80);
   const preview = root.querySelector('.release-preview');
+  const native = preview.firstElementChild?.shadowRoot;
   assert(!preview.hidden, 'Pointer hover opens the preview');
-  assert(preview.querySelector('.release-banner'), 'Preview includes an image');
-  assert(preview.querySelector('.preview-link').textContent === 'Play now', 'Preview action says Play now');
-  assert(preview.textContent.includes('87%') && preview.textContent.includes('Action') && preview.textContent.includes('Adventure awaits.'), 'Preview includes score, genres and decoded synopsis');
-  assert(!preview.querySelector('.description b'), 'Description markup is rendered as text');
+  assert(!!native?.querySelector('.banner img'), 'Native preview includes its image loader');
+  const box = native.querySelector('.absolute-container');
+  assert(getComputedStyle(box).width === '280px' && getComputedStyle(box).height === '320px', 'Preview retains native 280 by 320 geometry');
+  assert(parseFloat(getComputedStyle(native.querySelector('.banner')).height) === 144, 'Banner occupies the native 45 percent height');
+  const buttons = [...native.querySelectorAll('button')];
+  assert(buttons.length === 3 && buttons[0].textContent.trim() === 'Play now', 'Native Play, Favorite and Bookmark action row is retained');
+  assert(Math.abs(parseFloat(getComputedStyle(buttons[1]).height) - 25.6) < .1, 'Native icon buttons retain their 1.6rem size');
+  assert(native.querySelector('.details').textContent.includes('24 Minutes') && native.querySelector('.details').textContent.includes('87%'), 'Native details use duration, season and score without extra genres');
+  assert(getComputedStyle(native.querySelector('.line-clamp-4')).webkitLineClamp === '4', 'Synopsis retains the native four-line clamp');
+  const previousAction = globalThis.hayaseNativeAction;
+  const invoked = [];
+  globalThis.hayaseNativeAction = (release, action) => invoked.push(action);
+  try { buttons.forEach(button => button.click()); } finally { globalThis.hayaseNativeAction = previousAction; }
+  assert(invoked.join(',') === 'play,favorite,bookmark', 'All three native actions have functioning adapters');
   root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   assert(preview.hidden, 'Escape dismisses the preview');
-  card.focus();
-  await wait(100);
-  assert(!preview.hidden, 'Keyboard focus opens the preview');
+  if (document.hasFocus()) {
+    card.focus();
+    await wait(100);
+    assert(!preview.hidden, 'Keyboard focus opens the preview');
+  } else skipped.push('Real keyboard focus requires a focused preview tab.');
   root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  return { passed: results.length, results };
+  return { passed: results.length, results, skipped };
 };

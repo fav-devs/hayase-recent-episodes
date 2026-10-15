@@ -32,24 +32,25 @@
     const list = await localList();
     for (const id of ids) {
       const entry = list[id]?.mediaListEntry;
-      states[id] = { status: entry?.status ?? null, favorite: !!list[id]?.isFavourite };
+      states[id] = { status: entry?.status ?? null, progress: entry?.progress || 0, favorite: !!list[id]?.isFavourite };
       if (entry?.progress > 0 || entry?.status === 'COMPLETED') history[id] = true;
     }
     // Only the public viewer ID is used. The linked account's token is never
     // forwarded, cached, logged, or used in API requests.
-    const userId = read('ALViewer')?.viewer?.id;
+    const viewer = read('ALViewer')?.viewer;
+    const userId = viewer?.id;
     if (Number.isInteger(userId) && userId > 0 && ids.length) {
       try {
         const response = await chrome.runtime.sendMessage({ type: 'history-progress', userId, ids });
         if (response?.ok) for (const entry of response.entries) {
-          if (ids.includes(entry.mediaId)) states[entry.mediaId] = { ...states[entry.mediaId], status: entry.status ?? null };
+          if (ids.includes(entry.mediaId)) states[entry.mediaId] = { ...states[entry.mediaId], status: entry.status ?? null, progress: entry.progress || 0 };
           if (ids.includes(entry.mediaId) && (entry.progress > 0 || entry.status === 'COMPLETED')) history[entry.mediaId] = true;
         }
         if (Array.isArray(response?.favorites)) for (const id of ids) states[id] = { ...states[id], favorite: response.favorites.includes(id) };
       } catch { /* Local playback/list history remains available offline or for private lists. */ }
     }
     const settings = read('settings') || {};
-    return { history, states, settings: { hideSpoilers: !!settings.hideSpoilers, titleType: settings.titleType } };
+    return { history, states, settings: { hideSpoilers: !!settings.hideSpoilers, titleType: settings.titleType, titleLanguage: viewer?.options?.titleLanguage } };
   };
   globalThis.hayaseHistoryFor = async releases => (await globalThis.hayaseCardContextFor(releases)).history;
 })();

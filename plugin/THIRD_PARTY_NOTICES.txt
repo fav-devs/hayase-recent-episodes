@@ -1,0 +1,9 @@
+The native preview, button and animated-icon components are adapted from
+hayase-app/interface, commit 7e6e2675d5afa3afb1e17023bb67ed3a58faf785.
+https://github.com/hayase-app/interface
+These portions are covered by the accompanying HAYASE-LICENSE.txt (BUSL-1.1).
+The Play button label and native action/data adapters implement the user's plugin-specific requirements.
+
+The generated native-preview.js also includes Svelte (MIT), Bits UI (MIT),
+Tailwind Variants (MIT), clsx (MIT), tailwind-merge (MIT), and Lucide (ISC).
+Their embedded legal notices are retained by the bundler.

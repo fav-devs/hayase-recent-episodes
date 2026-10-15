@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:host{font:inherit;color:var(--foreground);pointer-events:auto}
+*::-webkit-scrollbar{display:none}
+.details span+span::before{content:'•';padding:0 .3rem;font-size:.4rem;align-self:center;white-space:normal;color:#737373!important}
+.animated-icon:not(:hover):not(:focus-visible):not(:active) .target-animated-icon{animation:none!important;transform:translateX(0) translateX(0) translateZ(0) translate(0,0) rotate(0)!important}
