@@ -1,15 +1,35 @@
 {
   "manifest_version": 3,
   "name": "Hayase Recent Episodes",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Customize Hayase Home sections and browse recently aired anime episodes with poster and hover previews.",
   "homepage_url": "https://github.com/fav-devs/hayase-recent-episodes",
-  "permissions": ["storage"],
-  "host_permissions": ["https://tsuzuki.top/*", "https://graphql.anilist.co/*", "https://hayase.ani.zip/*"],
-  "background": { "service_worker": "background.js", "type": "module" },
-  "content_scripts": [{
-    "matches": ["https://hayase.app/*"],
-    "js": ["home-layout.js", "playback.js", "history.js", "native-preview.js", "release-cards.js", "content.js"],
-    "run_at": "document_idle"
-  }]
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://tsuzuki.top/*",
+    "https://graphql.anilist.co/*",
+    "https://hayase.ani.zip/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://hayase.app/*"
+      ],
+      "js": [
+        "home-layout.js",
+        "playback.js",
+        "history.js",
+        "native-preview.js",
+        "release-cards.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

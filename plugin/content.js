@@ -61,7 +61,19 @@
         status.textContent = data.releases.length ? `${data.stale ? 'Showing cached episodes.' : ''}${data.warning ? ' Some details unavailable.' : ''}`.trim() : 'No episodes. Try another date.';
       } catch (error) {
         if (!alive || current !== serial) return;
-        items.replaceChildren(); status.textContent = error.message || 'Could not load releases. Try another date.';
+        items.replaceChildren();
+        if (/extension context invalidated|extension has been (?:updated|reloaded)/i.test(error?.message || '')) {
+          // Updating an extension destroys the old isolated world's runtime. Only a
+          // page reload can attach the new content scripts; retrying cannot repair it.
+          status.textContent = '';
+          const reload = document.createElement('button');
+          reload.type = 'button';
+          reload.textContent = 'Reload Hayase';
+          reload.onclick = () => location.reload();
+          status.append(reload);
+        } else {
+          status.textContent = error.message || 'Could not load releases. Try another date.';
+        }
       } finally { if (alive && current === serial) items.setAttribute('aria-busy', 'false'); }
     }
     const shift = direction => { const day = new Date(`${date.value}T12:00:00`); day.setDate(day.getDate() + direction * 7); date.value = dateValue(day); load(); };
