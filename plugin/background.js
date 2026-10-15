@@ -1,5 +1,5 @@
 import { apiWindow, selectReleases } from './releases.mjs';
-import { airingRows, enrichRows, graphql } from './anilist.mjs';
+import { airingRows, enrichRows, graphql, historyProgress } from './anilist.mjs';
 
 const pending = new Map();
 const TTL = 10 * 60 * 1000;
@@ -50,8 +50,12 @@ export async function loadReleases(request) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, respond) => {
-  if (!['recent-episodes', 'latest-episode'].includes(request?.type)) return;
+  if (!['recent-episodes', 'latest-episode', 'history-progress'].includes(request?.type)) return;
   if (!sender.url?.startsWith('https://hayase.app/') || sender.id !== chrome.runtime.id) return;
+  if (request.type === 'history-progress') {
+    historyProgress(request.userId, request.ids).then(entries => respond({ ok: true, entries }), () => respond({ ok: false }));
+    return true;
+  }
   if (request.type === 'latest-episode') {
     if (!Number.isInteger(request.mediaId) || request.mediaId <= 0) { respond({ ok: false, error: 'Invalid anime.' }); return; }
     graphql(`query LatestEpisode($id:Int,$now:Int) { Page(perPage:1) {

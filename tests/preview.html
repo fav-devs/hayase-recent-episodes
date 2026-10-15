@@ -7,6 +7,7 @@
 <main><p class="fixture">Integration fixture with sample data. This is not the live Hayase app.</p><div class="cursor-pointer text-muted-foreground"><div class="font-semibold text-lg">Continue Watching</div></div><div class="overflow-x-scroll">Existing Home row</div></main>
 <script>
  location.hash = '#/app/home';
+ localStorage.setItem('watchProgress', JSON.stringify({ 21: { episode: 2, currentTime: 60, safeduration: 1200 }, 16498: { episode: 0, currentTime: 0 } }));
  window.chrome = { storage: { local: {
    get: async key => ({ [key]: JSON.parse(localStorage.getItem(key) || 'null') }),
    set: async values => { for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value)); }
@@ -20,4 +21,4 @@
      { mediaId: 100, episode: 1, title: '<img src=x onerror=alert(1)>', airType: request.airType, time: Date.now() - 9000000, href: '/#/app/anime/100' }
    ] };
  } } };
-</script><script src="../plugin/home-layout.js"></script><script src="../plugin/playback.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>
+</script><script src="../plugin/home-layout.js"></script><script src="../plugin/playback.js"></script><script src="../plugin/history.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>

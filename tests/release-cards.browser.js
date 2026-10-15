@@ -15,6 +15,8 @@ window.runReleaseCardTests = async () => {
   assert(getComputedStyle(root.getElementById('items')).scrollbarWidth === 'none', 'Episode row hides its scrollbar');
   assert(root.querySelectorAll('.title img').length === 0, 'Untrusted titles stay plain text');
   assert(!root.querySelector('article time, article .release-meta'), 'Cards show episode numbers without format, year or timestamps');
+  assert(root.querySelector('article .history-badge')?.textContent === '1120', 'History badge shows the released episode number for a watched anime');
+  assert(!root.querySelectorAll('article')[1].querySelector('.history-badge'), 'Unwatched anime has no history badge');
   card.dispatchEvent(new PointerEvent('pointerenter'));
   const preview = root.querySelector('.release-preview');
   assert(!preview.hidden, 'Pointer hover opens the preview');

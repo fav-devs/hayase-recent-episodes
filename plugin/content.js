@@ -55,6 +55,9 @@
         if (!alive || current !== serial) return;
         if (!data?.ok) throw new Error(data?.error || 'Could not load releases. Retry in a moment.');
         cards.render(data.releases);
+        globalThis.hayaseHistoryFor(data.releases).then(history => {
+          if (alive && current === serial) cards.setHistory(history);
+        }).catch(() => {});
         status.textContent = data.releases.length ? `${data.stale ? 'Showing cached episodes.' : ''}${data.warning ? ' Some details unavailable.' : ''}`.trim() : 'No episodes. Try another date.';
       } catch (error) {
         if (!alive || current !== serial) return;

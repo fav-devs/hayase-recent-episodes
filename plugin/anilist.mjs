@@ -44,3 +44,17 @@ export async function enrichRows(rows) {
   }
   return rows.filter(row => !media.get(row.mediaId)?.isAdult).map(row => ({ ...row, media: media.get(row.mediaId) }));
 }
+
+export async function historyProgress(userId, ids) {
+  if (!Number.isInteger(userId) || userId < 1 || !Array.isArray(ids) || ids.length > 1000 || ids.some(id => !Number.isInteger(id) || id < 1)) throw new Error('Invalid watch-history request.');
+  const entries = [];
+  const unique = [...new Set(ids)];
+  for (let offset = 0; offset < unique.length; offset += 50) {
+    const data = await graphql(`query WatchHistory($userId:Int,$ids:[Int]) {
+      Page(perPage:50) { mediaList(userId:$userId,mediaId_in:$ids,type:ANIME) { mediaId progress status } }
+    }`, { userId, ids: unique.slice(offset, offset + 50) });
+    if (!Array.isArray(data.Page?.mediaList)) throw new Error('Watch history is unavailable.');
+    entries.push(...data.Page.mediaList.filter(Boolean));
+  }
+  return entries;
+}

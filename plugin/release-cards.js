@@ -16,6 +16,7 @@
       .release-cover-empty{display:flex;align-items:center;justify-content:center;color:var(--muted-foreground,GrayText);font-size:12px}
       .release-card .title{padding-top:12px;font-size:12.8px;font-weight:900;line-height:1.4;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
       .release-card .episode{font-size:12px;margin-top:auto;padding-top:8px;color:var(--muted-foreground,GrayText)}
+      article.release-card>a{position:relative}.history-badge{position:absolute;top:24px;right:24px;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 6px;border:1px solid var(--border,GrayText);border-radius:6px;background:var(--background,Canvas);color:var(--foreground,CanvasText);font-size:11px;font-weight:600;pointer-events:none}.history-badge svg{width:13px;height:13px}
       .release-preview{position:fixed;z-index:2147483000;width:280px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow-y:auto;border-radius:6px;background:var(--muted,Canvas);color:var(--foreground,CanvasText);box-shadow:0 8px 28px rgb(0 0 0 / .35);border:1px solid var(--border,GrayText)}
       .release-preview[hidden]{display:none}.release-banner{width:100%;height:140px;object-fit:cover;background:var(--background,Canvas);display:block}.release-preview-body{padding:12px 16px 16px}
       .release-preview h3{margin:0 0 10px;font-size:18px;line-height:1.35;font-weight:700}.release-preview .details{font-size:11px;line-height:1.7;margin:10px 0 5px}.release-preview .description{font-size:11px;line-height:1.6;color:var(--muted-foreground,GrayText);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
@@ -24,6 +25,21 @@
     root.append(style);
     const popup = element('div', 'release-preview'); popup.hidden = true; popup.setAttribute('role', 'region'); popup.setAttribute('aria-label', 'Anime preview'); root.append(popup);
     let timer, active;
+    let history = {};
+    let current = [];
+    function badges() {
+      for (const [index, release] of current.entries()) {
+        const link = items.children[index]?.querySelector('a');
+        if (!link) continue;
+        link.querySelector('.history-badge')?.remove();
+        if (!history[release.mediaId]) continue;
+        const badge = element('span', 'history-badge');
+        badge.setAttribute('aria-label', `In watch history, episode ${release.episode} released`);
+        badge.title = `In history · Episode ${release.episode}`;
+        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2.5 7M3 4v7h7M12 7v5l3 2"/></svg>';
+        badge.append(document.createTextNode(String(release.episode))); link.append(badge);
+      }
+    }
     const hide = () => { clearTimeout(timer); popup.hidden = true; active?.setAttribute('aria-expanded', 'false'); active = null; };
     const later = () => { clearTimeout(timer); timer = setTimeout(() => { if (!popup.contains(root.activeElement) && root.activeElement !== active) hide(); }, 160); };
     const image = (url, className, alt) => {
@@ -70,6 +86,7 @@
     addEventListener('scroll', onScroll, true);
     return {
       render(releases) {
+        current = releases;
         hide(); items.replaceChildren();
         for (const release of releases) {
           const media = release.media ?? {};
@@ -89,7 +106,9 @@
           link.onblur = later;
           article.append(link); items.append(article);
         }
+        badges();
       },
+      setHistory(value) { history = value; badges(); },
       clear: hide,
       destroy() { hide(); popup.remove(); style.remove(); root.removeEventListener('keydown', escape); items.removeEventListener('scroll', onScroll); removeEventListener('resize', onScroll); removeEventListener('scroll', onScroll, true); }
     };

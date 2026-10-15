@@ -8,8 +8,9 @@ A desktop Hayase plugin for recently aired anime and a customizable Home screen.
 - Choose a date or move between weeks with the compact date navigator.
 - Open **Customize** at the top right to reorder, hide, or restore Home sections.
 - Save your layout locally between app sessions.
+- Show a small history icon and released-episode number on cards for anime you have watched.
 
-**Experimental, version 0.5.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
+**Experimental, version 0.6.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
 
 ## Install
 
@@ -56,7 +57,7 @@ The plugin uses local extension storage for layout preferences and a ten-minute 
 
 API host permissions cover `graphql.anilist.co` and `tsuzuki.top`. The content script runs only on Hayase. Account credentials and watch history are not sent to either service. Titles and descriptions are rendered as text; images require HTTPS URLs.
 
-Hayase does not expose its internal AniList client or compiled card components through a public plugin bridge. This plugin uses the public AniList API independently and does not access your connected account, authentication token, in-memory cache, favorites or list status.
+Hayase does not expose its internal AniList client or compiled card components through a public plugin bridge. This plugin uses the public AniList API independently. For history badges, it reads local playback progress, the local watchlist, and the public viewer ID from the connected AniList account, then fetches public list progress for the displayed anime. The token is never forwarded, stored, logged, or used for requests. Private/unavailable AniList lists fall back to local history. Planning entries with no viewing progress do not get badges. The badge number is the episode shown on the card, not your watched-progress number.
 
 ## Compatibility
 
