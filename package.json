@@ -1,0 +1,24 @@
+{
+  "name": "hayase-recent-episodes",
+  "version": "0.4.0",
+  "description": "A desktop Hayase plugin for recent anime episodes and customizable Home sections.",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "author": "fav-devs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fav-devs/hayase-recent-episodes.git"
+  },
+  "homepage": "https://github.com/fav-devs/hayase-recent-episodes#readme",
+  "bugs": {
+    "url": "https://github.com/fav-devs/hayase-recent-episodes/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "package": "node scripts/package.mjs"
+  }
+}

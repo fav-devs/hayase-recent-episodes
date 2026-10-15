@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hayase plugin integration fixture</title>
+<style>
+ :root{--background:hsl(240 6% 8%);--foreground:hsl(240 5% 94%);--muted-foreground:hsl(240 4% 65%);--border:hsl(240 4% 24%);--card:hsl(240 5% 11%);--accent:hsl(240 4% 18%);--muted:hsl(240 4% 18%);--ring:hsl(210 80% 65%)}
+ body{margin:0;background:var(--background);color:var(--foreground);font:14px system-ui}main{max-width:1200px;margin:40px auto}.fixture{padding:16px;color:var(--muted-foreground)}.cursor-pointer{padding:16px}.overflow-x-scroll{height:80px;padding:16px}
+</style>
+<main><p class="fixture">Integration fixture with sample data. This is not the live Hayase app.</p><div class="cursor-pointer text-muted-foreground"><div class="font-semibold text-lg">Continue Watching</div></div><div class="overflow-x-scroll">Existing Home row</div></main>
+<script>
+ location.hash = '#/app/home';
+ window.chrome = { storage: { local: {
+   get: async key => ({ [key]: JSON.parse(localStorage.getItem(key) || 'null') }),
+   set: async values => { for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value)); }
+ } }, runtime: { sendMessage: async request => {
+   await new Promise(resolve => setTimeout(resolve, 80));
+   if (window.fixtureError) return { ok: false, error: 'Could not reach the release feed. Check your connection and retry.' };
+   return { ok: true, stale: false, estimated: 2, releases: window.fixtureEmpty ? [] : [
+     { mediaId: 21, episode: 1120, title: 'One Piece', airType: request.airType, time: Date.now() - 3600000, platform: 'Crunchyroll', href: '/#/app/anime/21', media: { coverImage: { large: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21-ELSYx3yMPcKM.jpg' }, bannerImage: 'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21-wf37VakJmZqs.jpg', format: 'TV', season: 'FALL', seasonYear: 1999, averageScore: 87, duration: 24, genres: ['Action','Adventure'], description: 'Luffy and his crew travel across the Grand Line.<br><b>Adventure awaits.</b>' } },
+     { mediaId: 16498, episode: 4, title: 'Attack on Titan', airType: request.airType, time: Date.now() - 7200000, platform: 'Crunchyroll', href: '/#/app/anime/16498' },
+     { mediaId: 100, episode: 1, title: '<img src=x onerror=alert(1)>', airType: request.airType, time: Date.now() - 9000000, href: '/#/app/anime/100' }
+   ] };
+ } } };
+</script><script src="../plugin/home-layout.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>
