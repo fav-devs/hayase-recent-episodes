@@ -12,12 +12,14 @@ window.runReleaseCardTests = async () => {
   assert(!settings.querySelector('#version, #release-options'), 'Removed release-options block is absent from the modal');
   assert(!root.querySelector('footer, #release-options'), 'Recent episodes has no settings or credits footer');
   assert(root.querySelector('article .release-cover')?.getAttribute('src')?.startsWith('https://'), 'Poster source is rendered');
+  assert(getComputedStyle(root.getElementById('items')).scrollbarWidth === 'none', 'Episode row hides its scrollbar');
   assert(root.querySelectorAll('.title img').length === 0, 'Untrusted titles stay plain text');
   assert(!root.querySelector('article time, article .release-meta'), 'Cards show episode numbers without format, year or timestamps');
   card.dispatchEvent(new PointerEvent('pointerenter'));
   const preview = root.querySelector('.release-preview');
   assert(!preview.hidden, 'Pointer hover opens the preview');
   assert(preview.querySelector('.release-banner'), 'Preview includes an image');
+  assert(preview.querySelector('.preview-link').textContent === 'Play now', 'Preview action says Play now');
   assert(preview.textContent.includes('87%') && preview.textContent.includes('Action') && preview.textContent.includes('Adventure awaits.'), 'Preview includes score, genres and decoded synopsis');
   assert(!preview.querySelector('.description b'), 'Description markup is rendered as text');
   root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

@@ -9,7 +9,7 @@ A desktop Hayase plugin for recently aired anime and a customizable Home screen.
 - Open **Customize** at the top right to reorder, hide, or restore Home sections.
 - Save your layout locally between app sessions.
 
-**Experimental, version 0.4.0.** This is an independent plugin. The current build has been tested with a browser fixture; it still needs verification in the real Hayase desktop app.
+**Experimental, version 0.5.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
 
 ## Install
 
@@ -38,7 +38,9 @@ To preview the UI with sample data:
 python3 -m http.server 7345
 ```
 
-Open `http://localhost:7345/tests/preview.html`. This fixture is not the live Hayase app and is excluded from the ZIP. Layout browser checks can be run with `await runHomeLayoutTests()` in the fixture's console. Card checks are available as `await runReleaseCardTests()` and require a focused browser tab for keyboard-focus assertions.
+Open `http://localhost:7345/tests/preview.html`. This fixture is not the live Hayase app and is excluded from the ZIP. The playback fixture at `/tests/playback.html` provides `await runPlaybackTests()` to check latest-episode selection, native auto-selection and cancellation without starting real downloads.
+
+Layout browser checks can be run with `await runHomeLayoutTests()` in the fixture's console. Card checks are available as `await runReleaseCardTests()` and require a focused browser tab for keyboard-focus assertions.
 
 ## Release data
 
@@ -46,7 +48,7 @@ The current UI queries [AniList](https://anilist.co/) for episode broadcast time
 
 **Broadcast dates do not confirm subtitled or dubbed availability.** The current UI has no sub/dub selector. Legacy [Tsuzuki](https://tsuzuki.netlify.app/api/) adapters remain in the code for version-specific release dates, but are not exposed in the UI.
 
-Each card opens Hayase's existing anime page. Select an episode and source there as usual.
+Clicking a poster opens the anime page. **Play now** in the hover preview looks up the latest aired episode, opens Hayase's native source-search dialog, sets that episode, and invokes **Auto Select Torrent** to begin loading the native best match. It does not use watched progress or the historical week's older episode number. If AniList has no episode schedule for the title, the card's episode is used. Actual playback requires an available result from your installed sources.
 
 ## Storage and permissions
 
@@ -59,6 +61,8 @@ Hayase does not expose its internal AniList client or compiled card components t
 ## Compatibility
 
 Home section discovery follows the current upstream heading/row structure. A Hayase UI update may require adapting `plugin/content.js` or `plugin/home-layout.js`. Section preferences use the native English headings as identifiers, so upstream renames may reset a section's preference.
+
+The episode row hides its scrollbar while retaining horizontal scrolling. The playback handoff relies on current native anime-page/source-dialog controls and can require adapting if Hayase changes them.
 
 The layout modal moves existing heading/row pairs without replacing their event handlers. Its trigger remains available even if all sections are hidden. **Reset layout** restores all sections in their default order.
 

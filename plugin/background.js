@@ -1,5 +1,5 @@
 import { apiWindow, selectReleases } from './releases.mjs';
-import { airingRows, enrichRows } from './anilist.mjs';
+import { airingRows, enrichRows, graphql } from './anilist.mjs';
 
 const pending = new Map();
 const TTL = 10 * 60 * 1000;
@@ -50,8 +50,18 @@ export async function loadReleases(request) {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, respond) => {
-  if (request?.type !== 'recent-episodes') return;
+  if (!['recent-episodes', 'latest-episode'].includes(request?.type)) return;
   if (!sender.url?.startsWith('https://hayase.app/') || sender.id !== chrome.runtime.id) return;
+  if (request.type === 'latest-episode') {
+    if (!Number.isInteger(request.mediaId) || request.mediaId <= 0) { respond({ ok: false, error: 'Invalid anime.' }); return; }
+    graphql(`query LatestEpisode($id:Int,$now:Int) { Page(perPage:1) {
+      airingSchedules(mediaId:$id,airingAt_lesser:$now,sort:TIME_DESC) { episode }
+    } }`, { id: request.mediaId, now: Math.floor(Date.now() / 1000) }).then(data => {
+      const episode = data.Page?.airingSchedules?.[0]?.episode;
+      respond({ ok: true, episode: Number.isFinite(episode) && episode > 0 ? episode : null });
+    }, error => respond({ ok: false, error: error.message }));
+    return true;
+  }
   loadReleases(request).then(data => respond({ ok: true, ...data }), error => respond({ ok: false, error: error.message }));
   return true;
 });

@@ -9,7 +9,7 @@
   globalThis.hayaseReleaseCards = (root, items) => {
     const style = document.createElement('style');
     style.textContent = `
-      #items{gap:0;padding:0 0 12px;align-items:flex-start}article.release-card{flex:0 0 184px;min-width:0}
+      #items{gap:0;padding:0 0 12px;align-items:flex-start;scrollbar-width:none}#items::-webkit-scrollbar{display:none}article.release-card{flex:0 0 184px;min-width:0}
       article.release-card>a{display:flex;flex-direction:column;min-height:323px;border:0;border-radius:0;padding:16px;background:transparent;color:inherit;text-decoration:none}
       article.release-card>a:hover{background:transparent}article.release-card>a:focus-visible{outline:2px solid var(--ring,Highlight);outline-offset:-3px}
       .release-cover{height:216px;width:152px;border-radius:5px;object-fit:cover;background:var(--muted,ButtonFace)}
@@ -44,7 +44,12 @@
       popup.replaceChildren(image(media.bannerImage || media.coverImage?.extraLarge || media.coverImage?.large || release.coverImage, 'release-banner', ''));
       const body = element('div', 'release-preview-body');
       body.append(element('h3', '', release.title));
-      const link = element('a', 'preview-link', 'Open in Hayase'); link.href = `/#/app/anime/${release.mediaId}`; body.append(link);
+      const link = element('a', 'preview-link', 'Play now'); link.href = `/#/app/anime/${release.mediaId}`;
+      link.onclick = event => {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault(); hide(); globalThis.hayasePlayLatest(release);
+      };
+      body.append(link);
       const year = media.seasonYear || media.startDate?.year;
       const details = [media.format?.replaceAll('_', ' '), media.episodes ? `${media.episodes} episodes` : null, media.duration ? `${media.duration} min` : null, [media.season?.toLowerCase(), year].filter(Boolean).join(' '), media.averageScore ? `${media.averageScore}%` : null].filter(Boolean).join(' · ');
       body.append(element('div', 'details', details || 'Anime details unavailable'));

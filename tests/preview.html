@@ -11,6 +11,7 @@
    get: async key => ({ [key]: JSON.parse(localStorage.getItem(key) || 'null') }),
    set: async values => { for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value)); }
  } }, runtime: { sendMessage: async request => {
+   if (request.type === 'latest-episode') return { ok: true, episode: 1121 };
    await new Promise(resolve => setTimeout(resolve, 80));
    if (window.fixtureError) return { ok: false, error: 'Could not reach the release feed. Check your connection and retry.' };
    return { ok: true, stale: false, estimated: 2, releases: window.fixtureEmpty ? [] : [
@@ -19,4 +20,4 @@
      { mediaId: 100, episode: 1, title: '<img src=x onerror=alert(1)>', airType: request.airType, time: Date.now() - 9000000, href: '/#/app/anime/100' }
    ] };
  } } };
-</script><script src="../plugin/home-layout.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>
+</script><script src="../plugin/home-layout.js"></script><script src="../plugin/playback.js"></script><script src="../plugin/release-cards.js"></script><script src="../plugin/content.js"></script><script src="home-layout.browser.js"></script><script src="release-cards.browser.js"></script></html>
