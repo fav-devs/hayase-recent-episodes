@@ -16,6 +16,18 @@
     });
   }
 
+  function navigate(hash) {
+    // Hayase uses SvelteKit's hash router. A real light-DOM link click lets its
+    // router load the page; setting location.hash alone can change the URL
+    // without rendering the anime page.
+    const link = document.createElement('a');
+    link.href = `/${hash}`;
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+  }
+
   function report(message) {
     const host = document.createElement('div'); host.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;max-width:360px';
     const root = host.attachShadow({ mode: 'open' });
@@ -46,7 +58,7 @@
       if (!Number.isInteger(release.mediaId) || release.mediaId < 1 || !Number.isFinite(episode) || episode <= 0) throw new Error('Invalid episode.');
       const titles = new Set([release.title, ...Object.values(release.media?.title ?? {})].filter(value => typeof value === 'string').map(normalize));
       navigating = true;
-      location.hash = target;
+      navigate(target);
       const play = await waitFor(() => {
         if (!titles.has(normalize(document.querySelector('h1')?.textContent))) return;
         return [...document.querySelectorAll('button')].find(button => visible(button) && !button.closest('[role="dialog"]') && /^(Watch Now|Play Now|Continue|Rewatch)$/i.test(button.textContent.trim()));
@@ -77,7 +89,10 @@
       navigating = false; // Native selection is now responsible for the player route.
       select.click();
     } catch (error) {
-      if (!signal.aborted) report(error.message || 'Could not start playback. Choose the episode in Hayase.');
+      if (!signal.aborted) {
+        if (initialHash === '#/app/home' && location.hash === target) navigate(initialHash);
+        report(error.message || 'Could not start playback. Choose the episode in Hayase.');
+      }
     } finally {
       removeEventListener('hashchange', cancelOnNavigation);
       removeEventListener('keydown', cancelOnEscape, true);
