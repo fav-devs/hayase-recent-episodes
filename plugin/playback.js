@@ -57,12 +57,30 @@
       const episode = latest.episode ?? release.episode;
       if (!Number.isInteger(release.mediaId) || release.mediaId < 1 || !Number.isFinite(episode) || episode <= 0) throw new Error('Invalid episode.');
       const titles = new Set([release.title, ...Object.values(release.media?.title ?? {})].filter(value => typeof value === 'string').map(normalize));
-      navigating = true;
-      navigate(target);
-      const play = await waitFor(() => {
-        if (!titles.has(normalize(document.querySelector('h1')?.textContent))) return;
-        return [...document.querySelectorAll('button')].find(button => visible(button) && !button.closest('[role="dialog"]') && /^(Watch Now|Play Now|Continue|Rewatch)$/i.test(button.textContent.trim()));
-      }, signal);
+      const isPlay = button => /^(Watch Now|Play Now|Continue|Rewatch)$/i.test(button.textContent.trim());
+      // Continue Watching uses SmallCard -> PreviewCard -> PlayButton. Reuse that
+      // actual instance and its playEp store (including a loaded torrent), rather
+      // than routing through an anime detail page when the media is already Home.
+      const homeCard = action === 'play' && initialHash === '#/app/home'
+        ? [...document.querySelectorAll('.item')].find(item => titles.has(normalize(item.querySelector('.font-black')?.textContent)))?.parentElement
+        : null;
+      let play;
+      if (homeCard) {
+        homeCard.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+        play = await waitFor(() => [...homeCard.querySelectorAll('button')].find(isPlay), signal);
+        const progress = homeCard.querySelector('.details')?.textContent.match(/(\d+)\s*\/\s*\d+\s*Episodes/i);
+        const nextEpisode = /^(Watch Now|Play Now|Rewatch)$/i.test(play.textContent.trim()) ? 1 : progress ? Number(progress[1]) + 1 : null;
+        // Never resume an older loaded episode merely because its anime matches.
+        if (nextEpisode !== episode) play = null;
+      }
+      if (!play) {
+        navigating = true;
+        navigate(target);
+        play = await waitFor(() => {
+          if (!titles.has(normalize(document.querySelector('h1')?.textContent))) return;
+          return [...document.querySelectorAll('button')].find(button => visible(button) && !button.closest('[role="dialog"]') && isPlay(button));
+        }, signal);
+      }
       if (action !== 'play') {
         const path = action === 'favorite'
           ? 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z'
@@ -74,9 +92,13 @@
         return;
       }
       play.click();
-      const dialog = await waitFor(() => [...document.querySelectorAll('[role="dialog"]')].find(node =>
+      const dialog = await waitFor(() => {
+        if (location.hash === '#/app/player') return { playing: true };
+        return [...document.querySelectorAll('[role="dialog"]')].find(node =>
         visible(node) && node.querySelector('input[type="number"]') && [...node.querySelectorAll('button')].some(button => button.textContent.trim() === 'Auto Select Torrent') &&
-        [...node.querySelectorAll('.text-2xl')].some(title => titles.has(normalize(title.textContent)))), signal);
+        [...node.querySelectorAll('.text-2xl')].some(title => titles.has(normalize(title.textContent))));
+      }, signal);
+      if (dialog.playing) return;
       const input = dialog.querySelector('input[type="number"]');
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, String(episode));
       input.dispatchEvent(new Event('input', { bubbles: true }));

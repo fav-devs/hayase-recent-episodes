@@ -46,6 +46,24 @@ window.runPlaybackTests = async () => {
   location.hash = '#/app/schedule';
   await playback;
   assert(location.hash === '#/app/schedule' && window.startedEpisode === undefined, 'Navigating away cancels pending playback');
+  window.delayLatest = false;
+  location.hash = '#/app/home';
+  await new Promise(resolve => setTimeout(resolve, 30));
+  const homeCard = document.createElement('div');
+  homeCard.innerHTML = '<div class="item"><div class="font-black">One Piece</div></div>';
+  homeCard.onpointerenter = () => {
+    if (homeCard.querySelector('button')) return;
+    const preview = document.createElement('div');
+    preview.innerHTML = '<div class="details">TV Series · 1120 / 1200 Episodes</div><button>Continue</button>';
+    preview.querySelector('button').onclick = () => { window.directEpisode = 1121; history.pushState({}, '', '/#/app/player'); };
+    homeCard.append(preview);
+  };
+  document.body.append(homeCard);
+  const before = window.nativeNavigations.length;
+  await hayasePlayLatest({ mediaId: 21, episode: 1100, title: 'One Piece' });
+  assert(window.nativeNavigations.length === before, 'Continue Watching reuses the Home control without opening the anime page');
+  assert(window.directEpisode === 1121 && location.hash === '#/app/player', 'An already loaded latest episode starts directly through native Continue');
+  homeCard.remove();
   return { passed: results.length, results };
 };
 </script><script src="../plugin/playback.js"></script></html>

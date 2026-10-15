@@ -50,7 +50,7 @@ The current UI queries [AniList](https://anilist.co/) for episode broadcast time
 
 **Broadcast dates do not confirm subtitled or dubbed availability.** The current UI has no sub/dub selector. Legacy [Tsuzuki](https://tsuzuki.netlify.app/api/) adapters remain in the code for version-specific release dates, but are not exposed in the UI.
 
-Clicking a poster opens the anime page. **Play now** in the hover preview looks up the latest aired episode, opens Hayase's native source-search dialog, sets that episode, and invokes **Auto Select Torrent** to begin loading the native best match. It does not use watched progress or the historical week's older episode number. If AniList has no episode schedule for the title, the card's episode is used. Actual playback requires an available result from your installed sources.
+Clicking a poster opens the anime page. **Play now** in the hover preview looks up the latest aired episode and first reuses a matching native Home card's play control when its next episode matches. This preserves Continue Watching's direct playback of an already loaded torrent without opening the anime page. Otherwise it opens Hayase's native source-search dialog, sets that episode, and invokes **Auto Select Torrent** to begin loading the native best match. It does not use watched progress or the historical week's older episode number. If AniList has no episode schedule for the title, the card's episode is used. Actual playback requires an available result from your installed sources.
 
 ## Storage and permissions
 
