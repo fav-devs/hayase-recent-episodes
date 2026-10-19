@@ -22,6 +22,7 @@
     root.append(style);
     const popup = element('div', 'release-preview'); popup.hidden = true; popup.setAttribute('role', 'region'); popup.setAttribute('aria-label', 'Anime preview'); root.append(popup);
     let timer, active, nativePreview;
+    let pressed = false, dragged = false, x = 0, y = 0, deltaX = 0, deltaY = 0, blockedUntil = 0;
     let previewContext = {};
     let history = {};
     let current = [];
@@ -59,6 +60,7 @@
     }
     function preview(release, anchor) {
       clearTimeout(timer);
+      if (pressed || Date.now() < blockedUntil) return;
       if (active === anchor && !popup.hidden) return;
       hide(); active = anchor; anchor.setAttribute('aria-expanded', 'true');
       const target = document.createElement('div'); popup.append(target); popup.hidden = false;
@@ -79,38 +81,83 @@
       }
     };
     root.addEventListener('keydown', escape);
-    const onScroll = () => { if (active && (root.activeElement === active || popup.contains(root.activeElement))) position(active); else hide(); };
+    const onScroll = () => {
+      blockedUntil = Date.now() + 160;
+      if (!pressed && active && (root.activeElement === active || popup.contains(root.activeElement))) position(active);
+      else hide();
+    };
+    // Same mouse deltas and 15px drag threshold as Hayase's dragScroll action.
+    // The fixed preview is outside #items, so listen on its shadow root as well.
+    const dragEvents = new AbortController();
+    const options = { signal: dragEvents.signal };
+    root.addEventListener('mousedown', event => {
+      if (event.button !== 0 || event.buttons !== 1 || !event.composedPath().some(node => node === items || node === popup)) return;
+      pressed = true; dragged = false; deltaX = deltaY = 0; x = event.clientX; y = event.clientY;
+      clearTimeout(timer);
+    }, options);
+    root.addEventListener('mousemove', event => {
+      if (!pressed) return;
+      deltaX += Math.abs(event.clientX - x); deltaY += Math.abs(event.clientY - y);
+      items.scrollBy(x - event.clientX, y - event.clientY);
+      x = event.clientX; y = event.clientY;
+      if (deltaX > 15 || deltaY > 15) {
+        dragged = true; hide(); event.preventDefault();
+        event.target.dispatchEvent(new MouseEvent('drag', { bubbles: true }));
+      }
+    }, options);
+    root.addEventListener('click', event => {
+      if (dragged && event.detail !== 0) { event.preventDefault(); event.stopImmediatePropagation(); }
+      pressed = false;
+    }, { ...options, capture: true });
+    root.addEventListener('dragstart', event => event.preventDefault(), options);
+    items.addEventListener('wheel', onScroll, { ...options, passive: true });
+    root.addEventListener('mouseleave', () => { pressed = false; }, options);
+    addEventListener('mouseup', () => { pressed = false; }, options);
     items.addEventListener('scroll', onScroll);
     addEventListener('resize', onScroll);
     addEventListener('scroll', onScroll, true);
     return {
       render(releases) {
+        const existing = new Map(current.map((release, index) => [`${release.mediaId}:${release.episode}`, items.children[index]]));
         current = releases;
-        hide(); items.replaceChildren();
-        for (const release of releases) {
+        const wanted = new Set();
+        for (const [index, release] of releases.entries()) {
+          const key = `${release.mediaId}:${release.episode}`;
+          let previous = existing.get(key);
+          if (previous) {
+            wanted.add(previous);
+            if (items.children[index] !== previous) items.insertBefore(previous, items.children[index] || null);
+            continue;
+          }
           const media = release.media ?? {};
           const article = element('article', 'release-card');
           const link = element('a'); link.href = `/#/app/anime/${release.mediaId}`; link.setAttribute('aria-expanded', 'false');
           link.append(image(media.coverImage?.large || media.coverImage?.extraLarge || release.coverImage, 'release-cover', `${release.title} cover`));
           link.append(element('span', 'title', release.title));
           link.append(element('span', 'episode', `Ep ${release.episode}${release.estimated ? ' · Estimated' : ''}`));
-          link.onpointerenter = () => {
+          link.onpointerenter = event => {
+            if (pressed || event.buttons || Date.now() < blockedUntil) return;
             // Keep a keyboard user's focused preview from being replaced by a
             // stationary pointer when focus scrolls another poster underneath it.
             if (root.activeElement?.closest('article.release-card') && root.activeElement !== link) return;
             clearTimeout(timer); timer = setTimeout(() => preview(release, link), 30);
           };
+          link.onpointermove = event => {
+            if (pressed || event.buttons || Date.now() < blockedUntil || (!event.movementX && !event.movementY)) return;
+            if (active !== link) { clearTimeout(timer); timer = setTimeout(() => preview(release, link), 30); }
+          };
           link.onpointerleave = later;
           link.onfocus = () => preview(release, link);
           link.onblur = later;
-          article.append(link); items.append(article);
+          article.append(link); items.insertBefore(article, items.children[index] || null); wanted.add(article);
         }
+        for (const node of [...items.children]) if (!wanted.has(node)) { if (node.contains(active)) hide(); node.remove(); }
         badges();
       },
       setHistory(value) { history = value; badges(); },
       setContext(value) { previewContext = value; history = value.history || {}; badges(); nativePreview?.update(value); },
       clear: hide,
-      destroy() { hide(); popup.remove(); style.remove(); root.removeEventListener('keydown', escape); items.removeEventListener('scroll', onScroll); removeEventListener('resize', onScroll); removeEventListener('scroll', onScroll, true); }
+      destroy() { dragEvents.abort(); hide(); popup.remove(); style.remove(); root.removeEventListener('keydown', escape); items.removeEventListener('scroll', onScroll); removeEventListener('resize', onScroll); removeEventListener('scroll', onScroll, true); }
     };
   };
 })();
