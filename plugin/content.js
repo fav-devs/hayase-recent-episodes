@@ -4,8 +4,6 @@
   let host;
   let dispose;
   let queued = false;
-  const dateValue = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
   function mount(container, before) {
     host = document.createElement('section');
     host.id = 'hayase-recent-episodes';
@@ -14,77 +12,69 @@
     root.innerHTML = `
       <style>
         :host{display:block;padding:20px 16px 8px;color:var(--foreground,CanvasText);font:inherit}
-        *{box-sizing:border-box}h2{font-size:18px;line-height:1.3;font-weight:600;margin:0}
-        header,.controls,.period{display:flex;align-items:center;gap:8px;flex-wrap:wrap}header{justify-content:space-between;margin-bottom:8px}
-        button,select,input{font:inherit;font-size:13px;color:inherit;background:var(--background,Canvas);border:1px solid var(--border,GrayText);border-radius:6px;padding:6px 9px;min-height:34px}
-        button{cursor:pointer}button:hover,select:hover{background:var(--accent,ButtonFace)}button:disabled{opacity:.45;cursor:default}
+        *{box-sizing:border-box}h2{font-size:18px;line-height:1.3;font-weight:600;margin:0 0 8px}
+        #items{display:flex;overflow-x:auto}#status{font-size:12px;color:var(--muted-foreground,GrayText)}#status:empty{display:none}
+        button{font:inherit;font-size:12px;color:inherit;background:var(--background,Canvas);border:1px solid var(--border,GrayText);border-radius:6px;padding:6px 9px;cursor:pointer}
         :focus-visible{outline:2px solid var(--ring,Highlight);outline-offset:3px}
-        .period{gap:0;flex-wrap:nowrap;border:1px solid var(--border,GrayText);border-radius:999px;padding:2px}.period button,.period input{border:0;background:transparent;min-height:30px}.period button{border-radius:999px;width:30px;padding:0;font-size:18px}.period input{width:130px;padding:4px 2px;font-size:12px;color-scheme:inherit}.muted,p,footer{color:var(--muted-foreground,GrayText);font-size:12px;line-height:1.6}
-        p{margin:8px 0}#status{font-size:12px;color:var(--muted-foreground,GrayText)}#status:empty{display:none}#items{display:flex;gap:12px;overflow-x:auto;padding:4px 3px 12px}.controls{margin:10px 0}.controls label{font-size:12px}summary{cursor:pointer;width:fit-content}footer{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}footer details{flex-basis:100%}
-        article{flex:0 0 190px}article a{display:block;color:inherit;text-decoration:none;border:1px solid var(--border,GrayText);border-radius:6px;padding:12px;min-height:124px;background:var(--card,Canvas)}
-        article a:hover{background:var(--accent,ButtonFace)}.title{font-weight:600;font-size:14px;line-height:1.4;margin-bottom:9px;display:block}.episode{display:block;font-size:13px}time{display:block;font-size:12px;color:var(--muted-foreground,GrayText);margin-top:4px}
-        footer a{color:inherit;text-underline-offset:3px}label{display:flex;align-items:center;gap:6px;font-size:12px}.skeleton{height:124px;width:190px;flex-shrink:0;border-radius:6px;background:var(--muted,ButtonFace)}
       </style>
-      <header><h2>Recent episodes</h2><div class="period"><button id="previous" aria-label="Previous period">‹</button><input id="date" type="date" aria-label="Release date"><button id="next" aria-label="Next period">›</button></div></header>
-      <div id="status" role="status" aria-live="polite"></div><div id="items" aria-busy="false"></div>
-      `;
-    const get = id => root.getElementById(id);
-    const date = get('date'), items = get('items'), status = get('status');
+      <h2>Recent episodes</h2><div id="items" aria-busy="false"></div><div id="status" role="status" aria-live="polite"></div>`;
+    const items = root.getElementById('items'), status = root.getElementById('status');
     const cards = globalThis.hayaseReleaseCards(root, items);
-    date.value = dateValue();
-    date.max = dateValue();
-    let serial = 0;
-    let alive = true;
-    dispose = () => { alive = false; serial++; cards.destroy(); };
-
-    async function load(refresh = false) {
-      const current = ++serial;
-      cards.clear();
-      const start = new Date(`${date.value}T00:00:00`);
-      if (!Number.isFinite(+start) || dateValue(start) !== date.value) { status.textContent = 'Choose a valid date.'; items.replaceChildren(); return; }
-      start.setDate(start.getDate() - (start.getDay() + 6) % 7);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 7);
-      date.setAttribute('aria-label', 'Choose a week by date');
-      get('next').disabled = end > new Date();
-      items.setAttribute('aria-busy', 'true');
-      items.replaceChildren(...Array.from({ length: 3 }, () => { const placeholder = document.createElement('div'); placeholder.className = 'skeleton'; placeholder.setAttribute('aria-hidden', 'true'); return placeholder; }));
-      status.textContent = 'Loading releases…';
-      try {
-        const data = await chrome.runtime.sendMessage({ type: 'recent-episodes', airType: 'aired', start: +start, end: +end, refresh: refresh === true });
-        if (!alive || current !== serial) return;
-        if (!data?.ok) throw new Error(data?.error || 'Could not load releases. Retry in a moment.');
-        cards.render(data.releases);
-        globalThis.hayaseCardContextFor(data.releases).then(context => {
-          if (alive && current === serial) cards.setContext(context);
-        }).catch(() => {});
-        status.textContent = data.releases.length ? `${data.stale ? 'Showing cached episodes.' : ''}${data.warning ? ' Some details unavailable.' : ''}`.trim() : 'No episodes. Try another date.';
-      } catch (error) {
-        if (!alive || current !== serial) return;
-        items.replaceChildren();
-        if (/extension context invalidated|extension has been (?:updated|reloaded)/i.test(error?.message || '')) {
-          // Updating an extension destroys the old isolated world's runtime. Only a
-          // page reload can attach the new content scripts; retrying cannot repair it.
-          status.textContent = '';
-          const reload = document.createElement('button');
-          reload.type = 'button';
-          reload.textContent = 'Reload Hayase';
-          reload.onclick = () => location.reload();
-          status.append(reload);
-        } else {
-          status.textContent = error.message || 'Could not load releases. Try another date.';
-        }
-      } finally { if (alive && current === serial) items.setAttribute('aria-busy', 'false'); }
+    const feed = globalThis.hayaseRecentFeed(request => chrome.runtime.sendMessage(request));
+    let alive = true, failed = false, contextSerial = 0;
+    let context = { history: {}, states: {}, settings: {} };
+    let rendered = [];
+    function render() {
+      const rows = feed.releases;
+      // Preserve the visible poster when new episodes are inserted at the front.
+      const first = [...items.children].find(node => node.offsetLeft + node.offsetWidth > items.scrollLeft);
+      const offset = first ? first.offsetLeft - items.scrollLeft : 0;
+      const keepPosition = items.scrollLeft > 0;
+      cards.render(rows);
+      if (keepPosition && first?.isConnected) items.scrollLeft = first.offsetLeft - offset;
+      const known = new Set(rendered.map(row => `${row.mediaId}:${row.episode}`));
+      const added = rows.filter(row => !known.has(`${row.mediaId}:${row.episode}`));
+      rendered = rows;
+      const current = added.length ? ++contextSerial : contextSerial;
+      // Read the complete context so concurrent refreshes cannot lose older badges.
+      if (added.length) globalThis.hayaseCardContextFor(rows).then(value => {
+        if (alive && current === contextSerial) { context = value; cards.setContext(context); }
+      }).catch(() => {});
     }
-    const shift = direction => { const day = new Date(`${date.value}T12:00:00`); day.setDate(day.getDate() + direction * 7); date.value = dateValue(day); load(); };
-    get('previous').onclick = () => shift(-1);
-    get('next').onclick = () => shift(1);
-    date.onchange = () => load();
+    function action(label, handler) {
+      const button = document.createElement('button'); button.textContent = label; button.type = 'button'; button.onclick = handler; status.append(button);
+    }
+    async function load(refresh = false) {
+      if (!alive || feed.busy || (!refresh && !feed.hasMore)) return;
+      failed = false;
+      items.setAttribute('aria-busy', 'true');
+      status.textContent = rendered.length ? '' : 'Loading episodes…';
+      const previousCount = rendered.length;
+      try {
+        await (refresh ? feed.refresh() : feed.older());
+        if (!alive) return;
+        render();
+        status.textContent = '';
+        // A bounded empty scan remains manually resumable without endless requests.
+        if (feed.hasMore && (!rendered.length || (!refresh && rendered.length === previousCount))) action('Load older episodes', () => load());
+        else if (!refresh && feed.hasMore && items.scrollWidth <= items.clientWidth && items.getClientRects().length) queueMicrotask(() => load());
+      } catch (error) {
+        if (!alive) return;
+        failed = true; status.textContent = '';
+        if (/extension context invalidated|extension has been (?:updated|reloaded)/i.test(error?.message || '')) action('Reload Hayase', () => location.reload());
+        else action('Retry loading episodes', () => load(refresh));
+      } finally { if (alive) items.setAttribute('aria-busy', 'false'); }
+    }
+    const onScroll = () => {
+      if (!failed && items.scrollLeft > 0 && items.scrollWidth - items.clientWidth - items.scrollLeft < 368) load();
+    };
+    items.addEventListener('scroll', onScroll, { passive: true });
+    const online = () => { if (alive && failed) load(); };
+    addEventListener('online', online);
     container.insertBefore(host, before);
     load();
-    const timer = setInterval(() => { date.max = dateValue(); load(); }, 10 * 60 * 1000);
-    const previousDispose = dispose;
-    dispose = () => { clearInterval(timer); previousDispose(); };
+    const timer = setInterval(() => { if (items.scrollLeft === 0) load(true); }, 10 * 60 * 1000);
+    dispose = () => { alive = false; contextSerial++; clearInterval(timer); feed.destroy(); cards.destroy(); removeEventListener('online', online); };
   }
 
   function reconcile() {
@@ -101,6 +91,5 @@
   const schedule = () => { if (!queued) { queued = true; queueMicrotask(reconcile); } };
   new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
   addEventListener('hashchange', reconcile);
-  addEventListener('online', () => host?.shadowRoot?.getElementById('date')?.dispatchEvent(new Event('change')));
   schedule();
 })();

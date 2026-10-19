@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hayase Recent Episodes",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Customize Hayase Home sections and browse recently aired anime episodes with poster and hover previews.",
   "homepage_url": "https://github.com/fav-devs/hayase-recent-episodes",
   "permissions": [
@@ -27,6 +27,7 @@
         "history.js",
         "native-preview.js",
         "release-cards.js",
+        "recent-feed.js",
         "content.js"
       ],
       "run_at": "document_idle"

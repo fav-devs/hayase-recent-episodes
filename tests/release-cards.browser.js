@@ -6,10 +6,10 @@ window.runReleaseCardTests = async () => {
   const assert = (condition, message) => { if (!condition) throw new Error(message); results.push(message); };
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const card = root.querySelector('article a');
-  root.getElementById('date').focus();
+  document.activeElement?.blur();
   assert(!root.querySelector('header .controls') && !root.getElementById('today'), 'Header has no view/period/refresh toolbar');
-  assert(!root.getElementById('period-label'), 'Date control has no range or timezone text');
-  assert(root.getElementById('status').textContent === '', 'Successful loading does not show an episode count');
+  assert(!root.querySelector('input[type=date], #previous, #next, .period'), 'Date picker and period controls are removed');
+  assert(!/\d+ episodes/.test(root.getElementById('status').textContent), 'Successful loading does not show an episode count');
   assert(!settings.querySelector('#version, #release-options'), 'Removed release-options block is absent from the modal');
   assert(!root.querySelector('footer, #release-options'), 'Recent episodes has no settings or credits footer');
   assert(root.querySelector('article .release-cover')?.getAttribute('src')?.startsWith('https://'), 'Poster source is rendered');

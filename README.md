@@ -4,13 +4,13 @@
 
 A desktop Hayase plugin for recently aired anime and a customizable Home screen.
 
-- Browse episode broadcasts by week with poster cards and hover previews.
-- Choose a date or move between weeks with the compact date navigator.
+- Browse newest episode broadcasts with poster cards and native hover previews.
+- Drag the row with your mouse or scroll horizontally to load earlier days automatically. No date picker.
 - Open **Customize** at the top right to reorder, hide, or restore Home sections.
 - Save your layout locally between app sessions.
 - Show a small history icon and released-episode number on cards for anime you have watched.
 
-**Experimental, version 0.7.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
+**Experimental, version 0.8.0.** This is an independent plugin. The current build has been tested with browser fixtures; the new automatic playback handoff still needs verification in the real Hayase desktop app.
 
 ## Install
 
@@ -42,11 +42,11 @@ python3 -m http.server 7345
 
 Open `http://localhost:7345/tests/preview.html`. This fixture is not the live Hayase app and is excluded from the ZIP. The playback fixture at `/tests/playback.html` provides `await runPlaybackTests()` to check latest-episode selection, native auto-selection and cancellation without starting real downloads.
 
-Layout browser checks can be run with `await runHomeLayoutTests()` in the fixture's console. Card checks are available as `await runReleaseCardTests()` and require a focused browser tab for keyboard-focus assertions.
+Layout browser checks can be run with `await runHomeLayoutTests()` in the fixture's console. Scrolling/pagination checks are available as `await runRecentScrollTests()` on a freshly loaded fixture. Card checks are available as `await runReleaseCardTests()` and require a focused browser tab for keyboard-focus assertions.
 
 ## Release data
 
-The current UI queries [AniList](https://anilist.co/) for episode broadcast times and anime metadata. All pages in the selected week are fetched, future timestamps are excluded, and dates follow your computer's timezone. Cards show the poster, title and episode number; hovering or focusing reveals the banner, synopsis, score and other anime details.
+The current UI queries [AniList](https://anilist.co/) for episode broadcast times and anime metadata. The row starts with the most recent seven local days and fetches earlier seven-day windows as you approach its right edge. All AniList pages in each window are fetched, future timestamps are excluded, and days follow your computer's timezone. Duplicate anime/episode pairs are removed across windows. Cards show the poster, title and episode number; hovering or focusing reveals the banner, synopsis, score and other anime details.
 
 **Broadcast dates do not confirm subtitled or dubbed availability.** The current UI has no sub/dub selector. Legacy [Tsuzuki](https://tsuzuki.netlify.app/api/) adapters remain in the code for version-specific release dates, but are not exposed in the UI.
 
@@ -54,7 +54,7 @@ Clicking a poster opens the anime page. **Play now** in the hover preview looks 
 
 ## Storage and permissions
 
-The plugin uses local extension storage for layout preferences and a ten-minute response cache. Cached periods remain readable when the feed is unavailable. The panel refreshes automatically every ten minutes.
+The plugin uses local extension storage for layout preferences and a ten-minute response cache. Cached periods remain readable when the feed is unavailable. The newest episodes refresh every ten minutes while the row is at its start. Loaded history is retained. Failed older-page requests can be retried without clearing cards or advancing the history cursor. Empty stretches are scanned in bounded batches to avoid endless background requests.
 
 API host permissions cover `graphql.anilist.co`, `tsuzuki.top`, and `hayase.ani.zip` (the same banner-image service used by native Hayase cards). The content script runs only on Hayase. Account credentials and watch history are not sent to either service. Titles and descriptions are rendered as text; images require HTTPS URLs.
 
@@ -68,13 +68,13 @@ Favorite and Bookmark clicks open the anime page and invoke Hayase's native cont
 
 The public app returned a 401 in the development browser. The compiled source and layout have been checked locally, but a side-by-side check in the installed app is still needed before claiming full live-app parity.
 
-Validation: 15 Node tests and 52 browser assertions passed across layout, card geometry, trailer/state behavior and native action handoff. A real keyboard-focus assertion was skipped because the collaborative preview tab was unfocused.
+Validation for v0.8.0: 21 Node tests and 63 browser assertions passed across pagination, drag/hover behavior, layout, card geometry, keyboard focus, and trailer/state behavior. Installed desktop integration remains unverified.
 
 ## Compatibility
 
 Home section discovery follows the current upstream heading/row structure. A Hayase UI update may require adapting `plugin/content.js` or `plugin/home-layout.js`. Section preferences use the native English headings as identifiers, so upstream renames may reset a section's preference.
 
-The episode row hides its scrollbar while retaining horizontal scrolling. The playback handoff relies on current native anime-page/source-dialog controls and can require adapting if Hayase changes them.
+The episode row hides its scrollbar while retaining horizontal scrolling and Hayase-style mouse dragging. Moving more than 15 pixels cancels hover previews and suppresses the click after dragging; touch scrolling remains native. The playback handoff relies on current native anime-page/source-dialog controls and can require adapting if Hayase changes them.
 
 The layout modal moves existing heading/row pairs without replacing their event handlers. Its trigger remains available even if all sections are hidden. **Reset layout** restores all sections in their default order.
 

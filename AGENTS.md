@@ -30,7 +30,8 @@ Keep the user's deliberate differences from upstream:
 - Recent-episode cards show a poster, title and episode number. Omit year, format/TV labels and timestamps on the base card.
 - A watched anime has a top-right history icon and released-episode number. No visible "In history" text; no badge without watch history.
 - The preview playback action says **Play now**, selects the latest aired episode, and starts native source selection/loading.
-- No visible scrollbar on the recent-episodes row.
+- No visible scrollbar on the recent-episodes row. Match native mouse drag scrolling and suppress hover previews during scrolling/dragging.
+- Recent episodes load newest first and append earlier days as the user scrolls. No date picker or period-navigation controls.
 - **Customize** sits at the top right and opens a layout-only modal.
 - The removed credits/options footer and release-options block stay removed. Do not relocate removed content elsewhere.
 - Keep copy minimal. Do not add explanations, toolbars or metadata the user removed.
